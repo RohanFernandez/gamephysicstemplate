@@ -27,6 +27,7 @@ void RigidBodySystemSimulator::initUI(DrawingUtilitiesClass* DUC)
 
 void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 {
+	m_bIsFirstRunOnNewCase = true;
 	for (int l_iRBIndex = 0; l_iRBIndex < MAX_RIGIDBODIES; l_iRBIndex++)
 	{
 		m_vectRigidBodies[l_iRBIndex].reset();
@@ -37,11 +38,13 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 	//Reset active rigid bodies to 0 to disable all rigid bodies
 	m_iActiveRigidBodies = 0;
 
+	std::cout << "\n\n\n\n\n===========================================================================================================\n";
 	switch (m_iTestCase)
 	{
 	case 0:
 	{
 		//DEMO 1
+		std::cout << "START DEMO1\n";
 		addRigidBody({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
 		setOrientationOf(0, Quat(0.0f, 0.0f, (90.0f / 180.0f) * M_PI));
 		applyForceOnBody(0, { 0.3f, 0.5f, 0.25f }, { 1.0f,1.0f,0.0f });
@@ -51,18 +54,24 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 	case 1:
 	{
 		//DEMO 2
+		std::cout << "START DEMO2\n";
+		addRigidBody({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		setOrientationOf(0, Quat(0.0f, 0.0f, (90.0f / 180.0f) * M_PI));
+		applyForceOnBody(0, { 0.3f, 0.5f, 0.25f }, { 1.0f,1.0f,0.0f });
 		break;
 	}
 
 	case 2:
 	{
 		//DEMO 3
+		std::cout << "START DEMO3\n";
 		break;
 	}
 
 	case 3:
 	{
 		//DEMO 4
+		std::cout << "START DEMO4\n";
 		break;
 	}
 
@@ -95,17 +104,32 @@ void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 
 void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 {
-	// simulate movement of all active rigid bodies
-	simulateRigidBodies(timeStep);
-
-	int l_iRigidBodyCount = getNumberOfRigidBodies();
-	for (int l_iRBIndex = 0; l_iRBIndex < l_iRigidBodyCount; l_iRBIndex++)
+	switch (m_iTestCase)
 	{
-		m_vectRigidBodies[l_iRBIndex].resetOnTimestepComplete();;
+		case 0:
+		{
+			if (m_bIsFirstRunOnNewCase)
+			{
+				// simulate movement of all active rigid bodies
+				simulateRigidBodies(2.0f);
+				Vec3 l_v3WorldPosOfPoint = m_vectRigidBodies[0].m_v3CenterPosition + (m_vectRigidBodies[0].m_quatRotation.getRotMat() * Vec3 { 0.3f, 0.5f, 0.25f });
+				Vec3 l_v3WorldVelocityOfPoint = m_vectRigidBodies[0].m_v3LinearVelocity + cross(m_vectRigidBodies[0].m_v3AngularVelocity, { 0.3f, 0.5f, 0.25f });
+				std::cout << "After single timestep h = 2.0f of point (0.3, 0.5, 0.25) \nWorld space position : " << l_v3WorldPosOfPoint << "\nWorld space velocity : "<< l_v3WorldVelocityOfPoint <<"\n";
+			}
+			break;
+		}
+
+		default:
+		{
+			// simulate movement of all active rigid bodies
+			simulateRigidBodies(timeStep);
+			break;
+		}
 	}
 
 	//Reset external forces
 	m_v3ExternalForce = { 0.0f, 0.0f, 0.0f };
+	m_bIsFirstRunOnNewCase = false;
 }
 
 void RigidBodySystemSimulator::drawFrame(ID3D11DeviceContext* pd3dImmediateContext)
@@ -165,11 +189,16 @@ void RigidBodySystemSimulator::simulateRigidBodies(float a_fTimeStep)
 		// New inverse inertia tensor
 		Mat4 l_m4TransposeRot = l_RB.m_quatRotation.getRotMat();
 		l_m4TransposeRot.transpose();
-		l_RB.m_m4InvInertiaTensor = l_RB.m_quatRotation.getRotMat() * l_RB.m_m4InvInertiaTensor * l_m4TransposeRot;
+		Mat4 l_CurrentInvInertiaTensor = l_RB.m_quatRotation.getRotMat() * l_RB.m_m4InvInertiaTensor * l_m4TransposeRot;
 
 		// New angular velocity
-		l_RB.m_v3AngularVelocity = l_RB.m_m4InvInertiaTensor * l_RB.m_v3AngularMomentum;
+		l_RB.m_v3AngularVelocity = l_CurrentInvInertiaTensor * l_RB.m_v3AngularMomentum;
 
+		//re normalizing quat
+		l_RB.m_quatRotation = l_RB.m_quatRotation.unit();
+
+		//Set torque to zero for next frame
+		l_RB.m_v3Torque = { 0.0f, 0.0f, 0.0f };
 	}
 }
 
@@ -237,9 +266,10 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, int mass)
 		//Calculate initial inverse inertia tensor
 		Mat4 l_m4Covariance;
 		l_m4Covariance.initId();
-		l_m4Covariance.value[0][0] = (1.0f / 12.0f) * l_pRB->m_iMass * ((l_pRB->m_v3Dimensions.y * l_pRB->m_v3Dimensions.y) + (l_pRB->m_v3Dimensions.z * l_pRB->m_v3Dimensions.z));
-		l_m4Covariance.value[1][1] = (1.0f / 12.0f) * l_pRB->m_iMass * ((l_pRB->m_v3Dimensions.x * l_pRB->m_v3Dimensions.x) + (l_pRB->m_v3Dimensions.z * l_pRB->m_v3Dimensions.z));
-		l_m4Covariance.value[2][2] = (1.0f / 12.0f) * l_pRB->m_iMass * ((l_pRB->m_v3Dimensions.x * l_pRB->m_v3Dimensions.x) + (l_pRB->m_v3Dimensions.y * l_pRB->m_v3Dimensions.y));
+		float l_f1By12 = (1.0f / 12.0f);
+		l_m4Covariance.value[0][0] = l_f1By12 * l_pRB->m_iMass * ((l_pRB->m_v3Dimensions.y * l_pRB->m_v3Dimensions.y) + (l_pRB->m_v3Dimensions.z * l_pRB->m_v3Dimensions.z));
+		l_m4Covariance.value[1][1] = l_f1By12 * l_pRB->m_iMass * ((l_pRB->m_v3Dimensions.x * l_pRB->m_v3Dimensions.x) + (l_pRB->m_v3Dimensions.z * l_pRB->m_v3Dimensions.z));
+		l_m4Covariance.value[2][2] = l_f1By12 * l_pRB->m_iMass * ((l_pRB->m_v3Dimensions.x * l_pRB->m_v3Dimensions.x) + (l_pRB->m_v3Dimensions.y * l_pRB->m_v3Dimensions.y));
 
 		float l_fCovarianceTrace = l_m4Covariance.value[0][0] + l_m4Covariance.value[1][1] + l_m4Covariance.value[2][2];
 

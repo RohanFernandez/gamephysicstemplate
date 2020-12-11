@@ -43,7 +43,10 @@ private:
 	Point2D m_trackmouse;
 	Point2D m_oldtrackmouse;
 
-
+	/// <summary>
+	/// Is the first update on a new case
+	/// </summary>
+	bool m_bIsFirstRunOnNewCase = true;
 
 	//USER DEFINED
 
@@ -91,15 +94,6 @@ private:
 				m_v3AngularMomentum     = { 0.0f, 0.0f, 0.0f };
 				m_m4InvInertiaTensor.initId();
 				m_m4Rotation.initId();
-			}
-
-			// Resets on complete of timestep
-			void resetOnTimestepComplete()
-			{
-				m_quatRotation = m_quatRotation.unit();
-
-				//Set torque to zero
-				m_v3Torque = { 0.0f, 0.0f, 0.0f };
 			}
 	};
 
