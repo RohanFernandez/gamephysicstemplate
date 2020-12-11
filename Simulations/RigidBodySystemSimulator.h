@@ -103,8 +103,6 @@ private:
 	//the current rigid bodies that are active in the scene
 	unsigned int m_iActiveRigidBodies = 0;
 
-	Vec3 m_v3ExternalForce = { 0.0f, 0.0f, 0.0f };
-
 	//The vector that holds all the rigid body objects
 	std::vector<RBCube> m_vectRigidBodies;
 

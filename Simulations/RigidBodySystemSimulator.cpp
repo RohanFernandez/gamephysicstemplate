@@ -58,6 +58,8 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 		addRigidBody({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
 		setOrientationOf(0, Quat(0.0f, 0.0f, (90.0f / 180.0f) * M_PI));
 		applyForceOnBody(0, { 0.3f, 0.5f, 0.25f }, { 1.0f,1.0f,0.0f });
+		applyForceOnBody(0, { 0.1f, -0.2f, -0.25f }, { -1.3f,-0.4f,0.0f });
+		//applyForceOnBody(0, { -0.3f, -0.5f, -0.25f }, { 1.0f,1.0f,0.0f });
 		break;
 	}
 
@@ -106,7 +108,7 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 {
 	switch (m_iTestCase)
 	{
-		case 0:
+	case 0:
 		{
 			if (m_bIsFirstRunOnNewCase)
 			{
@@ -114,21 +116,19 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 				simulateRigidBodies(2.0f);
 				Vec3 l_v3WorldPosOfPoint = m_vectRigidBodies[0].m_v3CenterPosition + (m_vectRigidBodies[0].m_quatRotation.getRotMat() * Vec3 { 0.3f, 0.5f, 0.25f });
 				Vec3 l_v3WorldVelocityOfPoint = m_vectRigidBodies[0].m_v3LinearVelocity + cross(m_vectRigidBodies[0].m_v3AngularVelocity, { 0.3f, 0.5f, 0.25f });
-				std::cout << "After single timestep h = 2.0f of point (0.3, 0.5, 0.25) \nWorld space position : " << l_v3WorldPosOfPoint << "\nWorld space velocity : "<< l_v3WorldVelocityOfPoint <<"\n";
+				std::cout << "After single timestep h = 2.0f of point (0.3, 0.5, 0.25) \nWorld space position : " << l_v3WorldPosOfPoint << "\nWorld space velocity : " << l_v3WorldVelocityOfPoint << "\n";
 			}
 			break;
 		}
-
 		default:
 		{
 			// simulate movement of all active rigid bodies
 			simulateRigidBodies(timeStep);
-			break;
 		}
 	}
 
 	//Reset external forces
-	m_v3ExternalForce = { 0.0f, 0.0f, 0.0f };
+	m_externalForce = { 0.0f, 0.0f, 0.0f };
 	m_bIsFirstRunOnNewCase = false;
 }
 
@@ -178,7 +178,7 @@ void RigidBodySystemSimulator::simulateRigidBodies(float a_fTimeStep)
 		l_RB.m_v3CenterPosition = l_RB.m_v3CenterPosition + a_fTimeStep * l_RB.m_v3LinearVelocity;
 
 		//New Linear velocity to be used next frame with the external force from this frame
-		l_RB.m_v3LinearVelocity = l_RB.m_v3LinearVelocity + a_fTimeStep * (m_v3ExternalForce / l_RB.m_iMass);
+		l_RB.m_v3LinearVelocity = l_RB.m_v3LinearVelocity + a_fTimeStep * (m_externalForce / l_RB.m_iMass);
 
 		//Set new rotation based on angular velocity calculated from last frame
 		l_RB.m_quatRotation = l_RB.m_quatRotation + 0.5f * a_fTimeStep * Quat(l_RB.m_v3AngularVelocity.x, l_RB.m_v3AngularVelocity.y, l_RB.m_v3AngularVelocity.z, 0.0f) * l_RB.m_quatRotation;
@@ -250,6 +250,7 @@ void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 	{
 		l_pRB->m_v3Torque += cross(loc, force);
 	}
+	m_externalForce += force;
 }
 
 void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, int mass)
