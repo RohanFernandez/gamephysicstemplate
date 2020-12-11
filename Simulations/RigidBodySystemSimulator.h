@@ -42,5 +42,88 @@ private:
 	Point2D m_mouse;
 	Point2D m_trackmouse;
 	Point2D m_oldtrackmouse;
+
+
+
+	//USER DEFINED
+
+
+	class RBCube
+	{
+		public:
+
+			Vec3 m_v3CenterPosition				= { 0.0f, 0.0f ,0.0f };
+			Vec3 m_v3Dimensions					= { 0.0f, 0.0f ,0.0f };
+			Quat m_quatRotation					= { 0.0f, 0.0f, 0.0f, 0.0f };;
+			Vec3 m_v3AngularVelocity			= { 0.0f, 0.0f ,0.0f };
+			int m_iMass = 0;
+			Vec3 m_v3LinearVelocity				= { 0.0f, 0.0f ,0.0f };
+			Vec3 m_v3Torque						= {0.0f, 0.0f ,0.0f};
+			Vec3 m_v3AngularMomentum			= { 0.0f, 0.0f ,0.0f };
+			Mat4 m_m4InvInertiaTensor = Mat4();
+
+		private:
+			Mat4 m_m4Translation = Mat4();
+			Mat4 m_m4Scale = Mat4();
+			Mat4 m_m4Rotation = Mat4();
+
+		public:
+			RBCube() {};
+			~RBCube() {};
+
+			Mat4 getTransformation()
+			{
+				m_m4Translation.initTranslation(m_v3CenterPosition.x, m_v3CenterPosition.y, m_v3CenterPosition.z);
+				m_m4Scale.initScaling(m_v3Dimensions.x, m_v3Dimensions.y, m_v3Dimensions.z);
+				m_m4Rotation = m_quatRotation.getRotMat();
+				return m_m4Scale * m_m4Rotation * m_m4Translation;
+			}
+
+			void reset()
+			{
+				m_v3CenterPosition		= { 0.0f, 0.0f, 0.0f };
+				m_v3Dimensions			= { 1.0f, 1.0f, 1.0f };
+				m_quatRotation			= {0.0f, 0.0f, 0.0f, 0.0f};
+				m_iMass = 0;
+				m_v3LinearVelocity		= { 0.0f, 0.0f, 0.0f };
+				m_v3AngularVelocity		= { 0.0f, 0.0f, 0.0f };
+				m_v3Torque				= { 0.0f, 0.0f, 0.0f };
+				m_v3AngularMomentum     = { 0.0f, 0.0f, 0.0f };
+				m_m4InvInertiaTensor.initId();
+				m_m4Rotation.initId();
+			}
+
+			// Resets on complete of timestep
+			void resetOnTimestepComplete()
+			{
+				m_quatRotation = m_quatRotation.unit();
+
+				//Set torque to zero
+				m_v3Torque = { 0.0f, 0.0f, 0.0f };
+			}
+	};
+
+	//The max rigidbodies that are pooled on start
+	static constexpr unsigned int MAX_RIGIDBODIES = 50;
+
+	//the current rigid bodies that are active in the scene
+	unsigned int m_iActiveRigidBodies = 0;
+
+	Vec3 m_v3ExternalForce = { 0.0f, 0.0f, 0.0f };
+
+	//The vector that holds all the rigid body objects
+	std::vector<RBCube> m_vectRigidBodies;
+
+	// Returns  the rigid body at index if it exists in the vector else returns nullptr
+	RBCube* getRigidBody(unsigned int a_iIndex);
+
+	//Simulate rigid bodies with the set values
+	void simulateRigidBodies(float a_fTimeStep);
+
+	// Draws all rigidbodies
+	void drawRigidBodies();
+
+
+
 	};
 #endif
