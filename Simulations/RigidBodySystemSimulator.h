@@ -63,7 +63,9 @@ private:
 			Vec3 m_v3Torque						= {0.0f, 0.0f ,0.0f};
 			Vec3 m_v3AngularMomentum			= { 0.0f, 0.0f ,0.0f };
 			Mat4 m_m4InvInertiaTensor = Mat4();
+			Mat4 m_m4CurrentInvInertiaTensor = Mat4();
 			Vec3  m_v3Force;
+			bool m_bIsColliding = false;
 
 		private:
 			Mat4 m_m4Translation = Mat4();
@@ -86,14 +88,16 @@ private:
 			{
 				m_v3CenterPosition		= { 0.0f, 0.0f, 0.0f };
 				m_v3Dimensions			= { 1.0f, 1.0f, 1.0f };
-				m_quatRotation			= {0.0f, 0.0f, 0.0f, 0.0f};
+				m_quatRotation			= Quat{0.0f, 0.0f, 0.0f};
 				m_iMass = 0;
 				m_v3LinearVelocity		= { 0.0f, 0.0f, 0.0f };
 				m_v3AngularVelocity		= { 0.0f, 0.0f, 0.0f };
 				m_v3Torque				= { 0.0f, 0.0f, 0.0f };
 				m_v3AngularMomentum     = { 0.0f, 0.0f, 0.0f };
 				m_v3Force				= { 0.0f, 0.0f, 0.0f };
+				m_bIsColliding			= false;
 				m_m4InvInertiaTensor.initId();
+				m_m4CurrentInvInertiaTensor.initId();
 				m_m4Rotation.initId();
 			}
 	};
@@ -103,6 +107,11 @@ private:
 
 	//the current rigid bodies that are active in the scene
 	unsigned int m_iActiveRigidBodies = 0;
+
+	/// <summary>
+	/// The bounciness of the rigidbodies
+	/// </summary>
+	float m_fBounciness = 1;
 
 	//The vector that holds all the rigid body objects
 	std::vector<RBCube> m_vectRigidBodies;
