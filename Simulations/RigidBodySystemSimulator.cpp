@@ -44,6 +44,7 @@ void RigidBodySystemSimulator::initUI(DrawingUtilitiesClass* DUC)
 
 void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 {
+	m_externalForce = { 0.0f, 0.0f, 0.0f };
 	m_bIsFirstRunOnNewCase = true;
 	for (int l_iRBIndex = 0; l_iRBIndex < MAX_RIGIDBODIES; l_iRBIndex++)
 	{
@@ -95,6 +96,18 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 	{
 		//DEMO 4
 		std::cout << "START DEMO4\n";
+		m_externalForce = { 0.0f, -9.8f, 0.0f };
+
+		//add ground
+		addRigidBody({ 0.0f, -1.0f, 0.0f }, { 10.0f, 0.1f, 10.0f }, 2.0f);
+		getRigidBody(0)->m_bIsStatic = true;
+
+		addRigidBody({ -0.25f, 1.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		applyForceOnBody(1, { 0.0f, 0.0f, 0.0f }, { 0.0f,-1.0f,0.0f });
+
+		addRigidBody({ 0.25f, -1.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		applyForceOnBody(2, { 0.0f, 0.0f, 0.0f }, { 0.0f,1.0f,0.0f });
+
 		break;
 	}
 
@@ -158,7 +171,6 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		}
 	}
 
-	m_externalForce = { 0.0f, 0.0f, 0.0f };
 	m_bIsFirstRunOnNewCase = false;
 }
 
@@ -218,6 +230,9 @@ void RigidBodySystemSimulator::simulateRigidBodies(float a_fTimeStep)
 	{
 		RBCube& l_RB = m_vectRigidBodies[l_iRBIndex];
 
+		//If static, no need to calculate anything
+		if (l_RB.m_bIsStatic) { continue; }
+
 		//New position with linear velocity from last frame
 		l_RB.m_v3CenterPosition = l_RB.m_v3CenterPosition + a_fTimeStep * l_RB.m_v3LinearVelocity;
 
@@ -258,18 +273,22 @@ void RigidBodySystemSimulator::simulateRigidBodies(float a_fTimeStep)
 			RBCube& l_RB2 = m_vectRigidBodies[l_iRBIndex2];
 			CollisionInfo l_CollisionInfo = checkCollisionSAT(l_RB1.getTransformation(), l_RB2.getTransformation());
 
-			//If collision is valid and the rb's are not detected to be collided with other objects in this frame
-			if (l_CollisionInfo.isValid && !l_RB1.m_bIsColliding && !l_RB2.m_bIsColliding)
+			Vec3 l_v3RB1LocalCollisionPoint = l_CollisionInfo.collisionPointWorld - l_RB1.m_v3CenterPosition;
+			Vec3 l_v3RB2LocalCollisionPoint = l_CollisionInfo.collisionPointWorld - l_RB2.m_v3CenterPosition;
+			Vec3 l_v3VelAtColPoint_RB1 = l_RB1.m_v3LinearVelocity + cross(l_RB1.m_v3AngularVelocity, l_v3RB1LocalCollisionPoint);
+			Vec3 l_v3VelAtColPoint_RB2 = l_RB2.m_v3LinearVelocity + cross(l_RB2.m_v3AngularVelocity, l_v3RB2LocalCollisionPoint);
+			Vec3 l_v3RelativeVelocityAB = l_v3VelAtColPoint_RB1 - l_v3VelAtColPoint_RB2;
+
+			//If collision is valid and 
+			//the rb's are not detected to be collided with other objects in this frame and
+			//the bodies are not separating
+			if (l_CollisionInfo.isValid &&
+				!l_RB1.m_bIsColliding &&
+				!l_RB2.m_bIsColliding && 
+				dot(l_v3RelativeVelocityAB, l_CollisionInfo.normalWorld) < 0.0f)
 			{
 				l_RB1.m_bIsColliding = true;
 				l_RB2.m_bIsColliding = true;
-
-				Vec3 l_v3RB1LocalCollisionPoint = l_CollisionInfo.collisionPointWorld - l_RB1.m_v3CenterPosition;
-				Vec3 l_v3RB2LocalCollisionPoint = l_CollisionInfo.collisionPointWorld - l_RB2.m_v3CenterPosition;
-
-				Vec3 l_v3VelAtColPoint_RB1 = l_RB1.m_v3LinearVelocity + cross(l_RB1.m_v3AngularVelocity, l_v3RB1LocalCollisionPoint);
-				Vec3 l_v3VelAtColPoint_RB2 = l_RB2.m_v3LinearVelocity + cross(l_RB2.m_v3AngularVelocity, l_v3RB2LocalCollisionPoint);
-				Vec3 l_v3RelativeVelocityAB = l_v3VelAtColPoint_RB1 - l_v3VelAtColPoint_RB2;
 
 				float l_fImpulseNumerator = -(1.0f + m_fBounciness) * dot(l_v3RelativeVelocityAB, l_CollisionInfo.normalWorld);
 
@@ -375,6 +394,7 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, int mass)
 		l_pRB->m_m4InvInertiaTensor.initId();
 		l_pRB->m_m4InvInertiaTensor = l_pRB->m_m4InvInertiaTensor * l_fCovarianceTrace - l_m4Covariance;
 		l_pRB->m_m4InvInertiaTensor.inverse();
+		l_pRB->m_m4CurrentInvInertiaTensor = l_pRB->m_m4InvInertiaTensor;
 	}
 }
 

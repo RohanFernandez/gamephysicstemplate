@@ -66,6 +66,7 @@ private:
 			Mat4 m_m4CurrentInvInertiaTensor = Mat4();
 			Vec3  m_v3Force;
 			bool m_bIsColliding = false;
+			bool m_bIsStatic = false;
 
 		private:
 			Mat4 m_m4Translation = Mat4();
@@ -96,6 +97,7 @@ private:
 				m_v3AngularMomentum     = { 0.0f, 0.0f, 0.0f };
 				m_v3Force				= { 0.0f, 0.0f, 0.0f };
 				m_bIsColliding			= false;
+				m_bIsStatic				= false;
 				m_m4InvInertiaTensor.initId();
 				m_m4CurrentInvInertiaTensor.initId();
 				m_m4Rotation.initId();
