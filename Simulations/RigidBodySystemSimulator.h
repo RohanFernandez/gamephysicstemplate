@@ -43,13 +43,12 @@ private:
 	Point2D m_trackmouse;
 	Point2D m_oldtrackmouse;
 
+
+	//USER DEFINED
 	/// <summary>
 	/// Is the first update on a new case
 	/// </summary>
 	bool m_bIsFirstRunOnNewCase = true;
-
-	//USER DEFINED
-
 
 	class RBCube
 	{
@@ -64,6 +63,7 @@ private:
 			Vec3 m_v3Torque						= {0.0f, 0.0f ,0.0f};
 			Vec3 m_v3AngularMomentum			= { 0.0f, 0.0f ,0.0f };
 			Mat4 m_m4InvInertiaTensor = Mat4();
+			Vec3  m_v3Force;
 
 		private:
 			Mat4 m_m4Translation = Mat4();
@@ -92,6 +92,7 @@ private:
 				m_v3AngularVelocity		= { 0.0f, 0.0f, 0.0f };
 				m_v3Torque				= { 0.0f, 0.0f, 0.0f };
 				m_v3AngularMomentum     = { 0.0f, 0.0f, 0.0f };
+				m_v3Force				= { 0.0f, 0.0f, 0.0f };
 				m_m4InvInertiaTensor.initId();
 				m_m4Rotation.initId();
 			}
@@ -106,6 +107,19 @@ private:
 	//The vector that holds all the rigid body objects
 	std::vector<RBCube> m_vectRigidBodies;
 
+	// Cube that adds force to all cubes from its position
+	RBCube m_RBForceCube;
+
+	/// <summary>
+	/// Is the force applied by the Force RB
+	/// </summary>
+	bool m_bIsForceAppliedByForceRB = false;
+
+	/// <summary>
+	/// Force that will be added by the force cube
+	/// </summary>
+	float m_fScalarForceByForceCubeToCenter = 0.0f;
+
 	// Returns  the rigid body at index if it exists in the vector else returns nullptr
 	RBCube* getRigidBody(unsigned int a_iIndex);
 
@@ -114,8 +128,5 @@ private:
 
 	// Draws all rigidbodies
 	void drawRigidBodies();
-
-
-
 	};
 #endif
