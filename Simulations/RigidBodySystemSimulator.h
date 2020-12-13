@@ -60,8 +60,9 @@ private:
 			Vec3 m_v3AngularVelocity			= { 0.0f, 0.0f ,0.0f };
 			int m_iMass = 0;
 			Vec3 m_v3LinearVelocity				= { 0.0f, 0.0f ,0.0f };
-			Vec3 m_v3Torque						= {0.0f, 0.0f ,0.0f};
+			Vec3 m_v3Torque						= { 0.0f, 0.0f ,0.0f};
 			Vec3 m_v3AngularMomentum			= { 0.0f, 0.0f ,0.0f };
+			Vec3 m_v3ResolvedCollisionPos		= { 0.0f, 0.0f ,0.0f };
 			Mat4 m_m4InvInertiaTensor = Mat4();
 			Mat4 m_m4CurrentInvInertiaTensor = Mat4();
 			Vec3  m_v3Force;
@@ -98,6 +99,7 @@ private:
 				m_v3Force				= { 0.0f, 0.0f, 0.0f };
 				m_bIsColliding			= false;
 				m_bIsStatic				= false;
+				m_v3ResolvedCollisionPos = { 0.0f, 0.0f, 0.0f };
 				m_m4InvInertiaTensor.initId();
 				m_m4CurrentInvInertiaTensor.initId();
 				m_m4Rotation.initId();
@@ -113,7 +115,7 @@ private:
 	/// <summary>
 	/// The bounciness of the rigidbodies
 	/// </summary>
-	float m_fBounciness = 1;
+	float m_fBounciness = 1.0f;
 
 	//The vector that holds all the rigid body objects
 	std::vector<RBCube> m_vectRigidBodies;
@@ -130,6 +132,9 @@ private:
 	/// Force that will be added by the force cube
 	/// </summary>
 	float m_fScalarForceByForceCubeToCenter = 0.0f;
+
+	//acceleration due to gravity
+	Vec3 m_v3Gravity = { 0.0f, -9.8f, 0.0f };
 
 	// Returns  the rigid body at index if it exists in the vector else returns nullptr
 	RBCube* getRigidBody(unsigned int a_iIndex);

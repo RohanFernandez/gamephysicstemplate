@@ -63,6 +63,7 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 	{
 		//DEMO 1
 		std::cout << "START DEMO1\n";
+		m_v3Gravity = { 0.0f, 0.0f, 0.0f };
 		addRigidBody({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
 		setOrientationOf(0, Quat(0.0f, 0.0f, (90.0f / 180.0f) * M_PI));
 		applyForceOnBody(0, { 0.3f, 0.5f, 0.25f }, { 1.0f,1.0f,0.0f });
@@ -73,6 +74,7 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 	{
 		//DEMO 2
 		std::cout << "START DEMO2 \nHold left mouse down on the screen at location you wish to move the yellow cube. \nClick on Add force to add a force to all rigidbodies from the location of the yellow cube.";
+		m_v3Gravity = { 0.0f, 0.0f, 0.0f };
 		addRigidBody({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
 		setOrientationOf(0, Quat(0.0f, 0.0f, (90.0f / 180.0f) * M_PI));
 		applyForceOnBody(0, { 0.3f, 0.5f, 0.25f }, { 1.0f,1.0f,0.0f });
@@ -83,30 +85,52 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 	case 2:
 	{
 		//DEMO 3
-		std::cout << "START DEMO3\n";
+		std::cout << "START DEMO3\nHold left mouse down on the screen at location you wish to move the yellow cube. \nClick on Add force to add a force to all rigidbodies from the location of the yellow cube.";
+		m_v3Gravity = { 0.0f, 0.0f, 0.0f };
 		addRigidBody({ -0.25f, 1.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
-		applyForceOnBody(0, { 0.0f, 0.0f, 0.0f }, { 0.0f,-1.0f,0.0f });
+		applyForceOnBody(0, { 0.0f, 0.0f, 0.0f }, { 0.0f,-10.0f,0.0f });
 
 		addRigidBody({ 0.25f, -1.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
-		applyForceOnBody(1, { 0.0f, 0.0f, 0.0f }, { 0.0f,1.0f,0.0f });
+		applyForceOnBody(1, { 0.0f, 0.0f, 0.0f }, { 0.0f,10.0f,0.0f });
 		break;
 	}
 
 	case 3:
 	{
 		//DEMO 4
-		std::cout << "START DEMO4\n";
-		m_externalForce = { 0.0f, -9.8f, 0.0f };
+		std::cout << "START DEMO4\nHold left mouse down on the screen at location you wish to move the yellow cube. \nClick on Add force to add a force to all rigidbodies from the location of the yellow cube.";
+		m_v3Gravity = { 0.0f, -9.8f, 0.0f };
 
 		//add ground
-		addRigidBody({ 0.0f, -1.0f, 0.0f }, { 10.0f, 0.1f, 10.0f }, 2.0f);
+		addRigidBody({ 0.0f, -1.0f, 0.0f }, { 4.0f, 0.2f, 4.0f }, 2000.0f);
 		getRigidBody(0)->m_bIsStatic = true;
 
-		addRigidBody({ -0.25f, 1.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
-		applyForceOnBody(1, { 0.0f, 0.0f, 0.0f }, { 0.0f,-1.0f,0.0f });
+		//Add ceiling
+		/*addRigidBody({ 0.0f, 1.0f, 0.0f }, { 4.0f, 0.2f, 4.0f }, 2000.0f);
+		getRigidBody(1)->m_bIsStatic = true;*/
 
-		addRigidBody({ 0.25f, -1.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
-		applyForceOnBody(2, { 0.0f, 0.0f, 0.0f }, { 0.0f,1.0f,0.0f });
+		//Add Walls
+		addRigidBody({ 0.0f, 1.0f, 2.0f }, { 4.0f, 4.0f, 0.2f }, 2000.0f);
+		getRigidBody(1)->m_bIsStatic = true;
+
+		addRigidBody({ 2.0f, 1.0f, 0.0f }, { 0.2f, 4.0f, 4.0f }, 2000.0f);
+		getRigidBody(2)->m_bIsStatic = true;
+
+		addRigidBody({ -2.0f, 1.0f, 0.0f }, { 0.2f, 4.0f, 4.0f }, 2000.0f);
+		getRigidBody(3)->m_bIsStatic = true;
+
+		//Add dynamic rigid bodies
+		addRigidBody({ -0.5f, 1.0f, -1.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		applyForceOnBody(4, { 0.0f, 0.0f, 0.0f }, { 0.0f,-1.0f,0.0f });
+
+		addRigidBody({ 0.5f, 1.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		applyForceOnBody(5, { 0.0f, 0.0f, 0.0f }, { 0.0f,1.0f,0.0f });
+
+		addRigidBody({ -0.6f, 1.0f, 0.75f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		applyForceOnBody(6, { 0.0f, 0.0f, 0.0f }, { 0.0f,-1.0f,0.0f });
+
+		addRigidBody({ 0.5f, 1.0f, 1.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		applyForceOnBody(7, { 0.0f, 0.0f, 0.0f }, { 0.0f,1.0f,0.0f });
 
 		break;
 	}
@@ -129,7 +153,7 @@ void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 		Vec3 inputView = Vec3((float)mouseDiff.x, (float)-mouseDiff.y, 0);
 		Vec3 inputWorld = worldViewInv.transformVectorNormal(inputView);
 		// find a proper scale!
-		float inputScale = 0.000001f;
+		float inputScale = 0.00001f;
 		inputWorld = inputWorld * inputScale;
 		m_RBForceCube.m_v3CenterPosition += inputWorld;
 	}
@@ -237,7 +261,7 @@ void RigidBodySystemSimulator::simulateRigidBodies(float a_fTimeStep)
 		l_RB.m_v3CenterPosition = l_RB.m_v3CenterPosition + a_fTimeStep * l_RB.m_v3LinearVelocity;
 
 		//New Linear velocity to be used next frame with the force added to this body and the external force from this frame
-		l_RB.m_v3LinearVelocity = l_RB.m_v3LinearVelocity + a_fTimeStep * ((l_RB.m_v3Force + m_externalForce) / l_RB.m_iMass);
+		l_RB.m_v3LinearVelocity = l_RB.m_v3LinearVelocity + a_fTimeStep * (((l_RB.m_v3Force + m_externalForce) / l_RB.m_iMass) + m_v3Gravity);
 
 		//Set new rotation based on angular velocity calculated from last frame
 		l_RB.m_quatRotation = l_RB.m_quatRotation + 0.5f * a_fTimeStep * Quat(l_RB.m_v3AngularVelocity.x, l_RB.m_v3AngularVelocity.y, l_RB.m_v3AngularVelocity.z, 0.0f) * l_RB.m_quatRotation;
@@ -275,6 +299,7 @@ void RigidBodySystemSimulator::simulateRigidBodies(float a_fTimeStep)
 
 			Vec3 l_v3RB1LocalCollisionPoint = l_CollisionInfo.collisionPointWorld - l_RB1.m_v3CenterPosition;
 			Vec3 l_v3RB2LocalCollisionPoint = l_CollisionInfo.collisionPointWorld - l_RB2.m_v3CenterPosition;
+
 			Vec3 l_v3VelAtColPoint_RB1 = l_RB1.m_v3LinearVelocity + cross(l_RB1.m_v3AngularVelocity, l_v3RB1LocalCollisionPoint);
 			Vec3 l_v3VelAtColPoint_RB2 = l_RB2.m_v3LinearVelocity + cross(l_RB2.m_v3AngularVelocity, l_v3RB2LocalCollisionPoint);
 			Vec3 l_v3RelativeVelocityAB = l_v3VelAtColPoint_RB1 - l_v3VelAtColPoint_RB2;
@@ -282,14 +307,11 @@ void RigidBodySystemSimulator::simulateRigidBodies(float a_fTimeStep)
 			//If collision is valid and 
 			//the rb's are not detected to be collided with other objects in this frame and
 			//the bodies are not separating
+			//both bodies are not static
 			if (l_CollisionInfo.isValid &&
-				!l_RB1.m_bIsColliding &&
-				!l_RB2.m_bIsColliding && 
-				dot(l_v3RelativeVelocityAB, l_CollisionInfo.normalWorld) < 0.0f)
+				dot(l_v3RelativeVelocityAB, l_CollisionInfo.normalWorld) < 0.0f &&
+				!(l_RB1.m_bIsStatic && l_RB2.m_bIsStatic) )
 			{
-				l_RB1.m_bIsColliding = true;
-				l_RB2.m_bIsColliding = true;
-
 				float l_fImpulseNumerator = -(1.0f + m_fBounciness) * dot(l_v3RelativeVelocityAB, l_CollisionInfo.normalWorld);
 
 				Vec3 l_v3RB1Den = cross(l_RB1.m_m4CurrentInvInertiaTensor * cross(l_v3RB1LocalCollisionPoint, l_CollisionInfo.normalWorld), l_v3RB1LocalCollisionPoint);
@@ -300,22 +322,29 @@ void RigidBodySystemSimulator::simulateRigidBodies(float a_fTimeStep)
 				float l_fImpulse = l_fImpulseNumerator / l_fImpulseDenominator;
 
 				//Calculate new linear velocity after collision
-				l_RB1.m_v3LinearVelocity = l_RB1.m_v3LinearVelocity + (l_fImpulse * l_CollisionInfo.normalWorld) / l_RB1.m_iMass;
-				l_RB2.m_v3LinearVelocity = l_RB2.m_v3LinearVelocity - (l_fImpulse * l_CollisionInfo.normalWorld) / l_RB2.m_iMass;
-
 				//Calculate new angular momentum after collision
-				l_RB1.m_v3AngularMomentum = l_RB1.m_v3AngularMomentum + cross(l_v3RB1LocalCollisionPoint, l_fImpulse * l_CollisionInfo.normalWorld);
-				l_RB2.m_v3AngularMomentum = l_RB2.m_v3AngularMomentum - cross(l_v3RB2LocalCollisionPoint, l_fImpulse * l_CollisionInfo.normalWorld);
+				if (!l_RB1.m_bIsStatic)
+				{
+					l_RB1.m_v3LinearVelocity += (l_fImpulse * l_CollisionInfo.normalWorld) / l_RB1.m_iMass;
+					l_RB1.m_v3AngularMomentum += cross(l_v3RB1LocalCollisionPoint, l_fImpulse * l_CollisionInfo.normalWorld);
+					l_RB1.m_v3ResolvedCollisionPos += l_CollisionInfo.depth * l_CollisionInfo.normalWorld;
+				}
 
-				break;
+				if (!l_RB2.m_bIsStatic)
+				{
+					l_RB2.m_v3LinearVelocity -= (l_fImpulse * l_CollisionInfo.normalWorld) / l_RB2.m_iMass;
+					l_RB2.m_v3AngularMomentum -=  cross(l_v3RB2LocalCollisionPoint, l_fImpulse * l_CollisionInfo.normalWorld);
+					l_RB2.m_v3ResolvedCollisionPos -= l_CollisionInfo.depth * l_CollisionInfo.normalWorld;
+				}
 			}
 		}
 	}
 
-	//after collision calculation set is colliding to false to all RB's for the next frame
-	for (int l_iRBIndex1 = 0; l_iRBIndex1 < l_iRigidBodyCount; l_iRBIndex1++)
+	for (int l_iRBIndex = 0; l_iRBIndex < l_iRigidBodyCount; l_iRBIndex++)
 	{
-		m_vectRigidBodies[l_iRBIndex1].m_bIsColliding = false;
+		RBCube& l_RBCube = m_vectRigidBodies[l_iRBIndex];
+		l_RBCube.m_v3CenterPosition += l_RBCube.m_v3ResolvedCollisionPos;
+		l_RBCube.m_v3ResolvedCollisionPos = { 0.0f, 0.0f, 0.0f };
 	}
 }
 
@@ -326,7 +355,7 @@ void RigidBodySystemSimulator::drawRigidBodies()
 	{
 		RBCube& l_RB = m_vectRigidBodies[l_iRBIndex];
 
-		DUC->setUpLighting(Vec3(0, 0, 0), 0.4 * Vec3(1, 1, 1), 2000.0, Vec3(0.5, 0.5, 0.5));
+		DUC->setUpLighting(Vec3(0, 0, 0), 0.4 * Vec3(1, 1, 1), 2000.0, l_RB.m_bIsStatic ? Vec3(0.0, 1.0, 0.0) : Vec3(1.0, 0.0, 0.0));
 		DUC->drawRigidBody(l_RB.getTransformation());
 	}
 }
