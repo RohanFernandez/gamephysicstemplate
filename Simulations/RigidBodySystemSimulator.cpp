@@ -309,7 +309,7 @@ void RigidBodySystemSimulator::simulateRigidBodies(float a_fTimeStep)
 			//the bodies are not separating
 			//both bodies are not static
 			if (l_CollisionInfo.isValid &&
-				//dot(l_v3RelativeVelocityAB, l_CollisionInfo.normalWorld) < 0.0f &&
+				//dot(l_v3RelativeVelocityAB, l_CollisionInfo.normalWorld) < 0.0f && //This fixes collisions amongst dynamic-dynamic-static or objects are stacked upon each other in order bottom to up static-dynamic-dynamic
 				!(l_RB1.m_bIsStatic && l_RB2.m_bIsStatic) )
 			{
 				float l_fImpulseNumerator = -(1.0f + m_fBounciness) * dot(l_v3RelativeVelocityAB, l_CollisionInfo.normalWorld);
@@ -355,7 +355,7 @@ void RigidBodySystemSimulator::drawRigidBodies()
 	{
 		RBCube& l_RB = m_vectRigidBodies[l_iRBIndex];
 
-		DUC->setUpLighting(Vec3(0, 0, 0), 0.4 * Vec3(1, 1, 1), 2000.0, l_RB.m_bIsStatic ? Vec3(0.0, 1.0, 0.0) : Vec3(1.0, 0.0, 0.0));
+		DUC->setUpLighting(Vec3(0, 0, 0), 0.4 * Vec3(1, 1, 1), 2000.0, l_RB.m_bIsStatic ? Vec3(0.0, 1.0, 0.0) : Vec3(l_iRBIndex % 2, 0.0, (l_iRBIndex + 1) % 2));
 		DUC->drawRigidBody(l_RB.getTransformation());
 	}
 }
