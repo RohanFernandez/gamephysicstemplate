@@ -120,16 +120,16 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 		getRigidBody(3)->m_bIsStatic = true;
 
 		//Add dynamic rigid bodies
-		addRigidBody({ -0.5f, 1.0f, -1.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		addRigidBody({ 0.4f, 1.0f, -0.05f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
 		applyForceOnBody(4, { 0.0f, 0.0f, 0.0f }, { 0.0f,-1.0f,0.0f });
 
-		addRigidBody({ -0.5f, 2.0f, -1.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		addRigidBody({ -0.4f, 2.0f, 0.05 }, { 1.0f, 0.6f, 0.5f }, 2.0f);
 		applyForceOnBody(5, { 0.0f, 0.0f, 0.0f }, { 0.0f,1.0f,0.0f });
 
-		addRigidBody({ -0.6f, 1.0f, 0.75f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		addRigidBody({ 0.4f, 3.0f, -0.05 }, { 1.0f, 0.6f, 0.5f }, 2.0f);
 		applyForceOnBody(6, { 0.0f, 0.0f, 0.0f }, { 0.0f,-1.0f,0.0f });
 
-		addRigidBody({ 0.5f, 1.0f, 1.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		addRigidBody({ -0.4f, 4.0f, 0.05 }, { 1.0f, 0.6f, 0.5f }, 2.0f);
 		applyForceOnBody(7, { 0.0f, 0.0f, 0.0f }, { 0.0f,1.0f,0.0f });
 
 		break;
@@ -340,6 +340,7 @@ void RigidBodySystemSimulator::simulateRigidBodies(float a_fTimeStep)
 		}
 	}
 
+	//This prevents the dynamic RB to sink into the static Ground
 	for (int l_iRBIndex = 0; l_iRBIndex < l_iRigidBodyCount; l_iRBIndex++)
 	{
 		RBCube& l_RBCube = m_vectRigidBodies[l_iRBIndex];
