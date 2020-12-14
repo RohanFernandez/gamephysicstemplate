@@ -102,7 +102,7 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 		m_v3Gravity = { 0.0f, -9.8f, 0.0f };
 
 		//add ground
-		addRigidBody({ 0.0f, -1.0f, 0.0f }, { 4.0f, 0.2f, 4.0f }, 2000.0f);
+		addRigidBody({ 0.0f, -1.0f, 0.0f }, { 4.0f, 0.2f, 4.0f }, 20.0f);
 		getRigidBody(0)->m_bIsStatic = true;
 
 		//Add ceiling
@@ -110,20 +110,20 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 		getRigidBody(1)->m_bIsStatic = true;*/
 
 		//Add Walls
-		addRigidBody({ 0.0f, 1.0f, 2.0f }, { 4.0f, 4.0f, 0.2f }, 2000.0f);
+		addRigidBody({ 0.0f, 1.0f, 2.0f }, { 4.0f, 4.0f, 0.2f }, 20.0f);
 		getRigidBody(1)->m_bIsStatic = true;
 
-		addRigidBody({ 2.0f, 1.0f, 0.0f }, { 0.2f, 4.0f, 4.0f }, 2000.0f);
+		addRigidBody({ 2.0f, 1.0f, 0.0f }, { 0.2f, 4.0f, 4.0f }, 20.0f);
 		getRigidBody(2)->m_bIsStatic = true;
 
-		addRigidBody({ -2.0f, 1.0f, 0.0f }, { 0.2f, 4.0f, 4.0f }, 2000.0f);
+		addRigidBody({ -2.0f, 1.0f, 0.0f }, { 0.2f, 4.0f, 4.0f }, 20.0f);
 		getRigidBody(3)->m_bIsStatic = true;
 
 		//Add dynamic rigid bodies
 		addRigidBody({ -0.5f, 1.0f, -1.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
 		applyForceOnBody(4, { 0.0f, 0.0f, 0.0f }, { 0.0f,-1.0f,0.0f });
 
-		addRigidBody({ 0.5f, 1.0f, 0.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
+		addRigidBody({ -0.5f, 2.0f, -1.0f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
 		applyForceOnBody(5, { 0.0f, 0.0f, 0.0f }, { 0.0f,1.0f,0.0f });
 
 		addRigidBody({ -0.6f, 1.0f, 0.75f }, { 1.0f, 0.6f, 0.5f }, 2.0f);
@@ -309,7 +309,7 @@ void RigidBodySystemSimulator::simulateRigidBodies(float a_fTimeStep)
 			//the bodies are not separating
 			//both bodies are not static
 			if (l_CollisionInfo.isValid &&
-				dot(l_v3RelativeVelocityAB, l_CollisionInfo.normalWorld) < 0.0f &&
+				//dot(l_v3RelativeVelocityAB, l_CollisionInfo.normalWorld) < 0.0f &&
 				!(l_RB1.m_bIsStatic && l_RB2.m_bIsStatic) )
 			{
 				float l_fImpulseNumerator = -(1.0f + m_fBounciness) * dot(l_v3RelativeVelocityAB, l_CollisionInfo.normalWorld);
