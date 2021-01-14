@@ -5,6 +5,55 @@ using namespace std;
 Grid::Grid() {
 }
 
+Grid::Grid(unsigned int a_iWidth, unsigned int a_iHeight, unsigned int a_iDepth)
+	: 
+	m_iWidth{ a_iWidth },
+	m_iHeight{ a_iHeight },
+	m_iDepth{ a_iDepth },
+	DATA_CAPACITY{ m_iWidth * m_iHeight * m_iDepth },
+	GRID_MAX_INDEX{ DATA_CAPACITY - 1},
+	m_pArrData{ new int[DATA_CAPACITY]{0} }
+{
+
+}
+
+Grid::~Grid()
+{
+	delete[] m_pArrData;
+	m_pArrData = nullptr;
+}
+
+int Grid::getVal(unsigned int a_iX, unsigned int a_iY, unsigned int a_iZ)
+{
+	if ((a_iX >= m_iWidth) || (a_iY >= m_iHeight) || (a_iZ >= m_iDepth))
+	{
+		std::cout << "ERROR:: Dimensions out of bounds \n";
+	}
+
+	unsigned int l_iIndex = (m_iWidth * m_iHeight * a_iZ) + (a_iY * m_iWidth) + a_iX;
+	if (l_iIndex < 0 || l_iIndex > GRID_MAX_INDEX) 
+	{ 
+		std::cout << "ERROR:: Grid index out of bounds\n";
+		return 0; 
+	}
+	return m_pArrData[l_iIndex];
+}
+
+void Grid::setVal(unsigned int a_iX, unsigned int a_iY, unsigned int a_iZ, int a_iValue)
+{
+	if ((a_iX >= m_iWidth) || (a_iY >= m_iHeight) || (a_iZ >= m_iDepth))
+	{
+		std::cout << "ERROR:: Dimensions out of bounds \n";
+	}
+
+	unsigned int l_iIndex = (m_iWidth * m_iHeight * a_iZ) + (a_iY * m_iWidth) + a_iX;
+	if (l_iIndex < 0 || l_iIndex > GRID_MAX_INDEX) 
+	{ 
+		std::cout << "ERROR:: Grid index out of bounds\n";
+		return; 
+	}
+	m_pArrData[l_iIndex] = a_iValue;
+}
 
 DiffusionSimulator::DiffusionSimulator()
 {
