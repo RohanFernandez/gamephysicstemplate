@@ -12,7 +12,7 @@ Grid::Grid(unsigned int a_iWidth, unsigned int a_iHeight, unsigned int a_iDepth)
 	m_iDepth{ a_iDepth },
 	DATA_CAPACITY{ m_iWidth * m_iHeight * m_iDepth },
 	GRID_MAX_INDEX{ DATA_CAPACITY - 1},
-	m_pArrData{ new int[DATA_CAPACITY]{0} }
+	m_pArrData{ new GridValues[DATA_CAPACITY]{} }
 {
 
 }
@@ -23,7 +23,7 @@ Grid::~Grid()
 	m_pArrData = nullptr;
 }
 
-int Grid::getVal(unsigned int a_iX, unsigned int a_iY, unsigned int a_iZ)
+GridValues* Grid::getVal(unsigned int a_iX, unsigned int a_iY, unsigned int a_iZ)
 {
 	if ((a_iX >= m_iWidth) || (a_iY >= m_iHeight) || (a_iZ >= m_iDepth))
 	{
@@ -34,25 +34,9 @@ int Grid::getVal(unsigned int a_iX, unsigned int a_iY, unsigned int a_iZ)
 	if (l_iIndex < 0 || l_iIndex > GRID_MAX_INDEX) 
 	{ 
 		std::cout << "ERROR:: Grid index out of bounds\n";
-		return 0; 
+		return nullptr; 
 	}
-	return m_pArrData[l_iIndex];
-}
-
-void Grid::setVal(unsigned int a_iX, unsigned int a_iY, unsigned int a_iZ, int a_iValue)
-{
-	if ((a_iX >= m_iWidth) || (a_iY >= m_iHeight) || (a_iZ >= m_iDepth))
-	{
-		std::cout << "ERROR:: Dimensions out of bounds \n";
-	}
-
-	unsigned int l_iIndex = (m_iWidth * m_iHeight * a_iZ) + (a_iY * m_iWidth) + a_iX;
-	if (l_iIndex < 0 || l_iIndex > GRID_MAX_INDEX) 
-	{ 
-		std::cout << "ERROR:: Grid index out of bounds\n";
-		return; 
-	}
-	m_pArrData[l_iIndex] = a_iValue;
+	return &m_pArrData[l_iIndex];
 }
 
 DiffusionSimulator::DiffusionSimulator()
@@ -62,6 +46,15 @@ DiffusionSimulator::DiffusionSimulator()
 	m_vfMovableObjectFinalPos = Vec3();
 	m_vfRotate = Vec3();
 	// to be implemented
+}
+
+DiffusionSimulator::~DiffusionSimulator()
+{
+	if (m_pGrid != nullptr)
+	{
+		delete m_pGrid;
+		m_pGrid = nullptr;
+	}
 }
 
 const char * DiffusionSimulator::getTestCasesStr(){
@@ -78,7 +71,11 @@ void DiffusionSimulator::reset(){
 void DiffusionSimulator::initUI(DrawingUtilitiesClass * DUC)
 {
 	this->DUC = DUC;
-	// to be implemented
+	TwAddVarRW(DUC->g_pTweakBar, "GRID_X", TW_TYPE_INT16, &m_iGridX, "step=1");
+	TwAddVarRW(DUC->g_pTweakBar, "GRID_Y", TW_TYPE_INT16, &m_iGridY, "step=1");
+	TwAddVarRW(DUC->g_pTweakBar, "GRID_Z", TW_TYPE_INT16, &m_iGridZ, "step=1");
+	TwAddVarRW(DUC->g_pTweakBar, "SphereRadius", TW_TYPE_FLOAT, &m_fSphereRadius, "step=0.01");
+	TwAddVarRW(DUC->g_pTweakBar, "CubeDimension", TW_TYPE_FLOAT, &m_fCubeDimension, "step=0.01");
 }
 
 void DiffusionSimulator::notifyCaseChanged(int testCase)
@@ -89,13 +86,24 @@ void DiffusionSimulator::notifyCaseChanged(int testCase)
 	//
 	//to be implemented
 	//
+
+	if (m_pGrid != nullptr)
+	{
+		delete m_pGrid;
+		m_pGrid = nullptr;
+	}
+
 	switch (m_iTestCase)
 	{
 	case 0:
 		cout << "Explicit solver!\n";
+		m_pGrid = new Grid(m_iGridX, m_iGridY, m_iGridZ);
+
 		break;
 	case 1:
 		cout << "Implicit solver!\n";
+		//m_pGrid = new Grid(16, 16, 0);
+
 		break;
 	default:
 		cout << "Empty Test!\n";
@@ -103,11 +111,25 @@ void DiffusionSimulator::notifyCaseChanged(int testCase)
 	}
 }
 
-Grid* DiffusionSimulator::diffuseTemperatureExplicit() {//add your own parameters
-	Grid* newT = new Grid();
-	// to be implemented
-	//make sure that the temperature in boundary cells stays zero
-	return newT;
+void DiffusionSimulator::diffuseTemperatureExplicit(const float& a_fTimeStep) 
+{
+	float l_fDeltaX = (float)m_fCubeDimension / (float)m_iGridX;
+	float l_fDeltaY = (float)m_fCubeDimension / (float)m_iGridY;
+	float l_fDeltaZ = (float)m_fCubeDimension / (float)m_iGridZ;
+	float l_fDeltaSqX = l_fDeltaX * l_fDeltaX;
+	float l_fDeltaSqY = l_fDeltaY * l_fDeltaY;
+	float l_fDeltaSqZ = l_fDeltaZ * l_fDeltaZ;
+
+	for (int l_iIndexZ = 0; l_iIndexZ < m_iGridX; l_iIndexZ++)
+	{
+		for (int l_iIndexY = 0; l_iIndexY < m_iGridY; l_iIndexY++)
+		{
+			for (int l_iIndexX = 0; l_iIndexX< m_iGridZ; l_iIndexX++)
+			{
+
+			}
+		}
+	}
 }
 
 void setupB(std::vector<Real>& b) {//add your own parameters
@@ -173,7 +195,7 @@ void DiffusionSimulator::simulateTimestep(float timeStep)
 	switch (m_iTestCase)
 	{
 	case 0:
-		T = diffuseTemperatureExplicit();
+		diffuseTemperatureExplicit(timeStep);
 		break;
 	case 1:
 		diffuseTemperatureImplicit();
@@ -185,6 +207,25 @@ void DiffusionSimulator::drawObjects()
 {
 	// to be implemented
 	//visualization
+
+	Vec3 l_v3SphereScale = { m_fSphereRadius ,m_fSphereRadius ,m_fSphereRadius };
+
+	float l_fDeltaX = (float)m_fCubeDimension / (float)m_iGridX;
+	float l_fDeltaY = (float)m_fCubeDimension / (float)m_iGridY;
+	float l_fDeltaZ = (float)m_fCubeDimension / (float)m_iGridZ;
+	for (int l_iIndexZ = 0; l_iIndexZ < m_iGridZ; l_iIndexZ++)
+	{
+		float l_fXPoZ = (m_fCubeDimension * -0.5f) + l_fDeltaZ * l_iIndexZ;
+		for (int l_iIndexY = 0; l_iIndexY < m_iGridY; l_iIndexY++)
+		{
+			float l_fYPos = (m_fCubeDimension * -0.5f) + l_fDeltaY * l_iIndexY;
+			for (int l_iIndexX = 0; l_iIndexX < m_iGridX; l_iIndexX++)
+			{
+				DUC->setUpLighting(Vec3(), 0.4 * Vec3(1, 1, 1), 100, Vec3(1.0f, 1.0f, 0.0f));
+				DUC->drawSphere({ (m_fCubeDimension * -0.5f) + l_fDeltaX * l_iIndexX, l_fYPos, l_fXPoZ }, l_v3SphereScale);
+			}
+		}
+	}
 }
 
 

@@ -4,6 +4,12 @@
 #include "Simulator.h"
 #include "vectorbase.h"
 
+struct GridValues
+{
+	float m_fOldVal = 0.0f;
+	float m_fNewVal = 0.0f;
+};
+
 //impement your own grid class for saving grid data
 class Grid {
 public:
@@ -12,8 +18,7 @@ public:
 	Grid(unsigned int a_iWidth, unsigned int a_iHeight, unsigned int a_iDepth);
 	~Grid();
 
-	int getVal(unsigned int a_iX, unsigned int a_iY, unsigned int a_iZ);
-	void setVal(unsigned int a_iX, unsigned int a_iY, unsigned int a_iZ, int a_iValue);
+	GridValues* getVal(unsigned int a_iX, unsigned int a_iY, unsigned int a_iZ);
 
 	inline unsigned int getWidth() { return m_iWidth; }
 	inline unsigned int getHeight() { return m_iHeight; }
@@ -26,15 +31,16 @@ private:
 	unsigned int m_iDepth	= 0;
 	const unsigned int DATA_CAPACITY = 0;
 	const unsigned int GRID_MAX_INDEX = 0;
-	int* m_pArrData = nullptr;
+	GridValues* m_pArrData = nullptr;
 };
-
-
 
 class DiffusionSimulator:public Simulator{
 public:
 	// Construtors
 	DiffusionSimulator();
+
+	//Destructors
+	~DiffusionSimulator();
 
 	// Functions
 	const char * getTestCasesStr();
@@ -48,7 +54,7 @@ public:
 	void onMouse(int x, int y);
 	// Specific Functions
 	void drawObjects();
-	Grid* diffuseTemperatureExplicit();
+	void diffuseTemperatureExplicit(const float& a_fTimeStep);
 	void diffuseTemperatureImplicit();
 
 private:
@@ -59,7 +65,13 @@ private:
 	Point2D m_mouse;
 	Point2D m_trackmouse;
 	Point2D m_oldtrackmouse;
-	Grid *T; //save results of every time step
+
+	unsigned int m_iGridX = 16;
+	unsigned int m_iGridY = 16;
+	unsigned int m_iGridZ = 1;
+	float m_fSphereRadius = 0.04f;
+	float m_fCubeDimension = 1.0f;
+	Grid* m_pGrid = nullptr; //save results of every time step
 
 };
 
