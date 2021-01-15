@@ -71,10 +71,9 @@ private:
 	Grid* m_pGrid2 = nullptr; //save results of every time step
 	Grid* m_pOldGrid = nullptr;
 	Grid* m_pNewGrid = nullptr;
-	float m_fDiffusionAlpa = 1.0f;
+	float m_fDiffusionAlpa = 0.4f;
 
-	float m_fMaxNegativeTemperature = 0.0f;
-	float m_fMaxPositiveTemperature = 0.0f;
+	float m_fMaxTemperatureReeached = 1.0f;
 };
 
 #endif
