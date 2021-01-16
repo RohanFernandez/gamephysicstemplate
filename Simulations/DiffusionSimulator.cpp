@@ -1,5 +1,4 @@
 #include "DiffusionSimulator.h"
-#include "pcgsolver.h"
 using namespace std;
 
 Grid::Grid() {
@@ -93,9 +92,24 @@ void DiffusionSimulator::reset(){
 void DiffusionSimulator::initUI(DrawingUtilitiesClass * DUC)
 {
 	this->DUC = DUC;
-	TwAddVarRW(DUC->g_pTweakBar, "GRID_X", TW_TYPE_INT16, &m_iGridX, "step=1");
-	TwAddVarRW(DUC->g_pTweakBar, "GRID_Y", TW_TYPE_INT16, &m_iGridY, "step=1");
-	TwAddVarRW(DUC->g_pTweakBar, "GRID_Z", TW_TYPE_INT16, &m_iGridZ, "step=1");
+	TwAddVarCB(DUC->g_pTweakBar, "GRID", TW_TYPE_DIR3F, 
+		[](const void* value, void* clientData) { 
+			DiffusionSimulator* l_pDiffusionSim = static_cast<DiffusionSimulator*>(clientData);
+			const float* l_pValues = static_cast<const float*>(value);
+			l_pDiffusionSim->m_iGridX = l_pValues[0];
+			l_pDiffusionSim->m_iGridY = l_pValues[1];
+			l_pDiffusionSim->m_iGridZ = l_pValues[2];
+			l_pDiffusionSim->notifyCaseChanged(l_pDiffusionSim->m_iTestCase);
+		}, 
+		[](void* value, void* clientData) {
+			DiffusionSimulator* l_pDiffusionSim = static_cast<DiffusionSimulator*>(clientData);
+			float* l_pValues = static_cast<float*>(value);
+			l_pValues[0] = l_pDiffusionSim->m_iGridX;
+			l_pValues[1] = l_pDiffusionSim->m_iGridY;
+			l_pValues[2] = l_pDiffusionSim->m_iGridZ;
+		}, this, "step=1.0 min=3.0 step=50.0"
+			);
+
 	TwAddVarRW(DUC->g_pTweakBar, "SphereRadius", TW_TYPE_FLOAT, &m_fSphereRadius, "step=0.01");
 	TwAddVarRW(DUC->g_pTweakBar, "CubeDimension", TW_TYPE_FLOAT, &m_fCubeDimension, "step=0.01");
 }
@@ -121,35 +135,38 @@ void DiffusionSimulator::notifyCaseChanged(int testCase)
 		m_pGrid2 = nullptr;
 	}
 
-	m_fMaxTemperatureReeached = 0.0f;
+	m_fMaxTemperatureReached = 0.0f;
+
+	//Grid Setup
+	m_pGrid1 = new Grid(m_iGridX, m_iGridY, m_iGridZ);
+	m_pGrid2 = new Grid(m_iGridX, m_iGridY, m_iGridZ);
+
+	m_pNewGrid = m_pGrid1; //set with values on start or default on start
+	m_pOldGrid = m_pGrid2; // Is set to 0 on start
+
+	int l_iGridYLimiter = m_iGridY - 1;
+	int l_iGridXLimiter = m_iGridX - 1;
+
+	for (int l_iIndexZ = 0; l_iIndexZ < m_iGridZ; l_iIndexZ++)
+	{
+		for (int l_iIndexY = 1; l_iIndexY < l_iGridYLimiter; l_iIndexY++)
+		{
+			for (int l_iIndexX = 1; l_iIndexX < l_iGridXLimiter; l_iIndexX++)
+			{
+				if (!(l_iIndexY == 1 || l_iIndexX == 1))
+				{
+					m_pNewGrid->setVal(l_iIndexX, l_iIndexY, l_iIndexZ, 10);
+				}
+			}
+		}
+	}
 
 	switch (m_iTestCase)
 	{
 	case 0:
 	{
 		cout << "Explicit solver!\n";
-		m_pGrid1 = new Grid(m_iGridX, m_iGridY, m_iGridZ);
-		m_pGrid2 = new Grid(m_iGridX, m_iGridY, m_iGridZ);
-
-		m_pNewGrid = m_pGrid1; //set with values on start or default on start
-		m_pOldGrid = m_pGrid2; // Is set to 0 on start
-
-		int l_iGridYLimiter = m_iGridY - 1;
-		int l_iGridXLimiter = m_iGridX - 1;
-
-		for (int l_iIndexZ = 0; l_iIndexZ < m_iGridZ; l_iIndexZ++)
-		{
-			for (int l_iIndexY = 1; l_iIndexY < l_iGridYLimiter; l_iIndexY++)
-			{
-				for (int l_iIndexX = 1; l_iIndexX < l_iGridXLimiter; l_iIndexX++)
-				{
-					if (!(l_iIndexY == 1 || l_iIndexX == 1 ))
-					{
-						m_pNewGrid->setVal(l_iIndexX, l_iIndexY, l_iIndexZ, 10);
-					}
-				}
-			}
-		}
+		
 		break;
 	}
 	case 1:
@@ -165,12 +182,14 @@ void DiffusionSimulator::notifyCaseChanged(int testCase)
 
 void DiffusionSimulator::diffuseTemperatureExplicit(const float& a_fTimeStep) 
 {
-	float l_fDeltaX = (float)m_fCubeDimension / (float)m_iGridX;
-	float l_fDeltaY = (float)m_fCubeDimension / (float)m_iGridY;
-	float l_fDeltaZ = (float)m_fCubeDimension / (float)m_iGridZ;
-	float l_fDeltaSqX = l_fDeltaX * l_fDeltaX;
-	float l_fDeltaSqY = l_fDeltaY * l_fDeltaY;
-	float l_fDeltaSqZ = l_fDeltaZ * l_fDeltaZ;
+	float l_fDeltaSqX = (float)m_fCubeDimension / (float)m_iGridX;
+	l_fDeltaSqX *= l_fDeltaSqX;
+
+	float l_fDeltaSqY = (float)m_fCubeDimension / (float)m_iGridY;
+	l_fDeltaSqY *= l_fDeltaSqY;
+
+	float l_fDeltaSqZ = (float)m_fCubeDimension / (float)m_iGridZ;
+	l_fDeltaSqZ *= l_fDeltaSqZ;
 
 	int l_iXLimiter = m_iGridX - 1;
 	int l_iYLimiter = m_iGridY - 1;
@@ -194,50 +213,135 @@ void DiffusionSimulator::diffuseTemperatureExplicit(const float& a_fTimeStep)
 
 				float l_fTemperature = m_fDiffusionAlpa* a_fTimeStep* (l_fValX + l_fValY + l_fValZ) + l_fCurrentIndexTemperature;
 				m_pNewGrid->setVal(l_iIndexX, l_iIndexY, l_iIndexZ, l_fTemperature);
-				if (l_fTemperature > m_fMaxTemperatureReeached)
+				if (l_fTemperature > m_fMaxTemperatureReached)
 				{
-					m_fMaxTemperatureReeached = l_fTemperature;
+					m_fMaxTemperatureReached = l_fTemperature;
 				}
 			}
 		}
 	}
 }
 
-void setupB(std::vector<Real>& b) {//add your own parameters
+void DiffusionSimulator::setupB(std::vector<Real>& b) {//add your own parameters
 	// to be implemented
 	//set vector B[sizeX*sizeY]
-	for (int i = 0; i < 25; i++) {
-		b.at(i) = 0;
+	int l_iGridSize = m_iGridX * m_iGridY * m_iGridZ;
+	for (int l_iIndexZ = 0; l_iIndexZ < m_iGridZ; l_iIndexZ++)
+	{
+		for (int l_iIndexY = 0; l_iIndexY < m_iGridY; l_iIndexY++)
+		{
+			int l_iCurrentRowIndex = (l_iIndexZ * m_iGridY * m_iGridX) + (l_iIndexY * m_iGridX);
+			for (int l_iIndexX = 0; l_iIndexX < m_iGridX; l_iIndexX++)
+			{
+				b.at(l_iCurrentRowIndex + l_iIndexX) = m_pOldGrid->getVal(l_iIndexX, l_iIndexY, l_iIndexZ);
+			}
+		}
 	}
 }
 
-void fillT() {//add your own parameters
+void DiffusionSimulator::fillT(std::vector<Real>& x) {//add your own parameters
 	// to be implemented
 	//fill T with solved vector x
 	//make sure that the temperature in boundary cells stays zero
+
+	int l_iXLimiter = m_iGridX - 1;
+	int l_iYLimiter = m_iGridY - 1;
+	for (int l_iIndexZ = 0; l_iIndexZ < m_iGridZ; l_iIndexZ++)
+	{
+		for (int l_iIndexY = 1; l_iIndexY < l_iYLimiter; l_iIndexY++)
+		{
+			for (int l_iIndexX = 1; l_iIndexX < l_iXLimiter; l_iIndexX++)
+			{
+				float l_fTemperature = x.at((l_iIndexZ * m_iGridX * m_iGridY) + (l_iIndexY * m_iGridX) + l_iIndexX);
+				m_pNewGrid->setVal(l_iIndexX, l_iIndexY, l_iIndexZ, l_fTemperature);
+				if (l_fTemperature > m_fMaxTemperatureReached)
+				{
+					m_fMaxTemperatureReached = l_fTemperature;
+				}
+			}
+		}
+	}
 }
 
-void setupA(SparseMatrix<Real>& A, double factor) {//add your own parameters
+void DiffusionSimulator::setupA(SparseMatrix<Real>& A, const float& a_fTimeStep) 
+{	//add your own parameters
 	// to be implemented
 	//setup Matrix A[sizeX*sizeY*sizeZ, sizeX*sizeY*sizeZ]
 	// set with:  A.set_element( index1, index2 , value );
 	// if needed, read with: A(index1, index2);
 	// avoid zero rows in A -> set the diagonal value for boundary cells to 1.0
-	for (int i = 0; i < 25; i++) {
-			A.set_element(i, i, 1); // set diagonal
+
+	float l_fCoefficient = m_fDiffusionAlpa * a_fTimeStep;
+	int l_iGridXLimiter = m_iGridX - 1;
+	int l_iGridYLimiter = m_iGridY - 1;
+	
+	int l_iGridXY = m_iGridX * m_iGridY;
+	int l_iGridZLimiterIndex = (m_iGridZ - 1) * l_iGridXY;
+
+	float l_fDeltaSqX = (float)m_fCubeDimension / (float)m_iGridX;
+	l_fDeltaSqX *= l_fDeltaSqX;
+	float l_fCoefficientX = l_fCoefficient / l_fDeltaSqX;
+
+	float l_fDeltaSqY = (float)m_fCubeDimension / (float)m_iGridY;
+	l_fDeltaSqY *= l_fDeltaSqY;
+	float l_fCoefficientY = l_fCoefficient / l_fDeltaSqY;
+
+	float l_fDeltaSqZ = (float)m_fCubeDimension / (float)m_iGridZ;
+	l_fDeltaSqZ *= l_fDeltaSqZ;
+	float l_fCoefficientZ = l_fCoefficient / l_fDeltaSqZ;
+
+	for (int l_iIndexZ = 0; l_iIndexZ < m_iGridZ; l_iIndexZ++)
+	{
+		for (int l_iIndexY = 0; l_iIndexY < m_iGridY; l_iIndexY++)
+		{
+			for (int l_iIndexX = 0; l_iIndexX < m_iGridX; l_iIndexX++)
+			{
+				if ((l_iIndexX == 0 ||
+					l_iIndexX == l_iGridXLimiter||
+					l_iIndexY == 0 ||
+					l_iIndexY == l_iGridYLimiter))
+				{
+					if (l_iIndexY == l_iIndexX)
+					{
+						A.set_element(l_iIndexX, l_iIndexY, 1); // set diagonal of boundary values to 1.0
+					}
+					else
+					{
+						A.set_element(l_iIndexX, l_iIndexY, 0);
+					}
+				}
+				else
+				{
+					int l_iCurrentIndex = (l_iIndexZ * l_iGridXY) + (l_iIndexY * m_iGridX) + l_iIndexX;
+
+					A.set_element(l_iCurrentIndex, l_iCurrentIndex - 1, -l_fCoefficientX); //x - 1
+					A.set_element(l_iCurrentIndex, l_iCurrentIndex + 1, -l_fCoefficientX); //x + 1
+					A.set_element(l_iCurrentIndex, l_iCurrentIndex - m_iGridX, -l_fCoefficientY); // y - 1
+					A.set_element(l_iCurrentIndex, l_iCurrentIndex + m_iGridX, -l_fCoefficientY); // y + 1
+
+					if (l_iCurrentIndex > l_iGridXY && l_iCurrentIndex < l_iGridZLimiterIndex)
+					{
+						A.set_element(l_iCurrentIndex, l_iCurrentIndex - l_iGridXY, -l_fCoefficientZ); // z - 1 
+						A.set_element(l_iCurrentIndex, l_iCurrentIndex + l_iGridXY, -l_fCoefficientZ); // z + 1
+					}
+					A.set_element(l_iCurrentIndex, l_iCurrentIndex, 1.0f + 2.0f * (l_fCoefficientX + l_fCoefficientY + l_fCoefficientZ)); // x, y, z
+				}
+			}
+		}
 	}
 }
 
 
-void DiffusionSimulator::diffuseTemperatureImplicit() {//add your own parameters
+void DiffusionSimulator::diffuseTemperatureImplicit(const float& a_fTimeStep) {//add your own parameters
 	// solve A T = b
 	// to be implemented
-	const int N = 25;//N = sizeX*sizeY*sizeZ
-	SparseMatrix<Real> *A = new SparseMatrix<Real> (N);
-	std::vector<Real> *b = new std::vector<Real>(N);
+	int l_iGridElementCount = m_iGridX * m_iGridY * m_iGridZ;
+	//const int N = l_iGridElementCount;//N = sizeX*sizeY*sizeZ
+	SparseMatrix<Real> A(l_iGridElementCount);
+	std::vector<Real> b(l_iGridElementCount);
 
-	setupA(*A, 0.1);
-	setupB(*b);
+	setupA(A, a_fTimeStep);
+	setupB(b);
 
 	// perform solve
 	Real pcg_target_residual = 1e-05;
@@ -248,13 +352,13 @@ void DiffusionSimulator::diffuseTemperatureImplicit() {//add your own parameters
 	SparsePCGSolver<Real> solver;
 	solver.set_solver_parameters(pcg_target_residual, pcg_max_iterations, 0.97, 0.25);
 
-	std::vector<Real> x(N);
-	for (int j = 0; j < N; ++j) { x[j] = 0.; }
+	std::vector<Real> x(l_iGridElementCount);
+	for (int j = 0; j < l_iGridElementCount; ++j) { x[j] = 0.; }
 
 	// preconditioners: 0 off, 1 diagonal, 2 incomplete cholesky
-	solver.solve(*A, *b, x, ret_pcg_residual, ret_pcg_iterations, 0);
+	solver.solve(A, b, x, ret_pcg_residual, ret_pcg_iterations, 0);
 	// x contains the new temperature values
-	fillT();//copy x to T
+	fillT(x);//copy x to T
 }
 
 
@@ -263,21 +367,20 @@ void DiffusionSimulator::simulateTimestep(float timeStep)
 {
 	// to be implemented
 	// update current setup for each frame
+	Grid* l_pTemp = m_pOldGrid;
+	m_pOldGrid = m_pNewGrid;
+	m_pNewGrid = l_pTemp;
+
 	switch (m_iTestCase)
 	{
 	case 0:
 		{
-			Grid* l_pTemp = m_pOldGrid;
-			m_pOldGrid = m_pNewGrid;
-			m_pNewGrid = l_pTemp;
-
 			diffuseTemperatureExplicit(timeStep);
-
 			break;
 		}
-		case 1:
+	case 1:
 		{
-			diffuseTemperatureImplicit();
+			diffuseTemperatureImplicit(timeStep);
 			break;
 		}
 	}
@@ -303,7 +406,7 @@ void DiffusionSimulator::drawObjects()
 			{
 			 	float l_fNewValue = m_pNewGrid->getVal(l_iIndexX, l_iIndexY, l_iIndexZ);
 
-				float l_fNormalizedTemperature = l_fNewValue / m_fMaxTemperatureReeached;
+				float l_fNormalizedTemperature = l_fNewValue / m_fMaxTemperatureReached;
 
 				DUC->setUpLighting(Vec3(), 0.4 * Vec3(1, 1, 1), 100,  Vec3(1.0f, l_fNormalizedTemperature, l_fNormalizedTemperature));
 				DUC->drawSphere({ (m_fCubeDimension * -0.5f) + l_fDeltaX * l_iIndexX, l_fYPos, l_fXPoZ }, l_v3SphereScale);

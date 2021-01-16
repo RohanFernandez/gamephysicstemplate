@@ -3,6 +3,7 @@
 
 #include "Simulator.h"
 #include "vectorbase.h"
+#include "pcgsolver.h"
 
 
 //impement your own grid class for saving grid data
@@ -51,7 +52,11 @@ public:
 	// Specific Functions
 	void drawObjects();
 	void diffuseTemperatureExplicit(const float& a_fTimeStep);
-	void diffuseTemperatureImplicit();
+	void diffuseTemperatureImplicit(const float& a_fTimeStep);
+
+	void setupA(SparseMatrix<Real>& A, const float& a_fTimeStep);
+	void setupB(std::vector<Real>& b);
+	void fillT(std::vector<Real>& x);
 
 private:
 	// Attributes
@@ -73,7 +78,7 @@ private:
 	Grid* m_pNewGrid = nullptr;
 	float m_fDiffusionAlpa = 0.4f;
 
-	float m_fMaxTemperatureReeached = 1.0f;
+	float m_fMaxTemperatureReached = 1.0f;
 };
 
 #endif
