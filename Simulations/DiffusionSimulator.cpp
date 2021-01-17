@@ -144,6 +144,8 @@ void DiffusionSimulator::notifyCaseChanged(int testCase)
 	m_pNewGrid = m_pGrid1; //set with values on start or default on start
 	m_pOldGrid = m_pGrid2; // Is set to 0 on start
 
+
+	// Setup of cells with the temperature
 	int l_iGridYLimiter = m_iGridY - 1;
 	int l_iGridXLimiter = m_iGridX - 1;
 
@@ -254,6 +256,8 @@ void DiffusionSimulator::fillT(std::vector<Real>& x) {//add your own parameters
 			{
 				float l_fTemperature = x.at((l_iIndexZ * m_iGridX * m_iGridY) + (l_iIndexY * m_iGridX) + l_iIndexX);
 				m_pNewGrid->setVal(l_iIndexX, l_iIndexY, l_iIndexZ, l_fTemperature);
+
+				//Save max temp for interpolating from White to Red, + max to a negative/0 value
 				if (l_fTemperature > m_fMaxTemperatureReached)
 				{
 					m_fMaxTemperatureReached = l_fTemperature;
@@ -317,17 +321,17 @@ void DiffusionSimulator::setupA(SparseMatrix<Real>& A, const float& a_fTimeStep)
 				{
 					int l_iCurrentIndex = (l_iIndexZ * l_iGridXY) + (l_iIndexY * m_iGridX) + l_iIndexX;
 
-					A.set_element(l_iCurrentIndex, l_iCurrentIndex - 1, -l_fCoefficientX); //x - 1
-					A.set_element(l_iCurrentIndex, l_iCurrentIndex + 1, -l_fCoefficientX); //x + 1
-					A.set_element(l_iCurrentIndex, l_iCurrentIndex - m_iGridX, -l_fCoefficientY); // y - 1
-					A.set_element(l_iCurrentIndex, l_iCurrentIndex + m_iGridX, -l_fCoefficientY); // y + 1
+					A.set_element(l_iCurrentIndex, l_iCurrentIndex - 1, -l_fCoefficientX); //x - 1 affects X
+					A.set_element(l_iCurrentIndex, l_iCurrentIndex + 1, -l_fCoefficientX); //x + 1 affects X
+					A.set_element(l_iCurrentIndex, l_iCurrentIndex - m_iGridX, -l_fCoefficientY); // y - 1 affects Y
+					A.set_element(l_iCurrentIndex, l_iCurrentIndex + m_iGridX, -l_fCoefficientY); // y + 1 affects Y
 
 					if (l_iCurrentIndex > l_iGridXY && l_iCurrentIndex < l_iGridZLimiterIndex)
 					{
-						A.set_element(l_iCurrentIndex, l_iCurrentIndex - l_iGridXY, -l_fCoefficientZ); // z - 1 
-						A.set_element(l_iCurrentIndex, l_iCurrentIndex + l_iGridXY, -l_fCoefficientZ); // z + 1
+						A.set_element(l_iCurrentIndex, l_iCurrentIndex - l_iGridXY, -l_fCoefficientZ); // z - 1 affects Z
+						A.set_element(l_iCurrentIndex, l_iCurrentIndex + l_iGridXY, -l_fCoefficientZ); // z + 1 affects Z
 					}
-					A.set_element(l_iCurrentIndex, l_iCurrentIndex, 1.0f + 2.0f * (l_fCoefficientX + l_fCoefficientY + l_fCoefficientZ)); // x, y, z
+					A.set_element(l_iCurrentIndex, l_iCurrentIndex, 1.0f + 2.0f * (l_fCoefficientX + l_fCoefficientY + l_fCoefficientZ)); // x, y, z affects all dimensions
 				}
 			}
 		}
