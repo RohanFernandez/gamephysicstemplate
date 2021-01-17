@@ -69,7 +69,7 @@ private:
 
 	unsigned int m_iGridX = 16;
 	unsigned int m_iGridY = 16;
-	unsigned int m_iGridZ = 16;
+	unsigned int m_iGridZ = 1;
 	float m_fSphereRadius = 0.04f;
 	float m_fCubeDimension = 1.0f;
 	Grid* m_pGrid1 = nullptr; //save results of every time step
