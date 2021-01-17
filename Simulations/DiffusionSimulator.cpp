@@ -107,7 +107,7 @@ void DiffusionSimulator::initUI(DrawingUtilitiesClass * DUC)
 			l_pValues[0] = l_pDiffusionSim->m_iGridX;
 			l_pValues[1] = l_pDiffusionSim->m_iGridY;
 			l_pValues[2] = l_pDiffusionSim->m_iGridZ;
-		}, this, "step=1.0 min=3.0 step=50.0"
+		}, this, "step=1.0"
 			);
 
 	TwAddVarRW(DUC->g_pTweakBar, "SphereRadius", TW_TYPE_FLOAT, &m_fSphereRadius, "step=0.01");
@@ -166,12 +166,10 @@ void DiffusionSimulator::notifyCaseChanged(int testCase)
 	case 0:
 	{
 		cout << "Explicit solver!\n";
-		
 		break;
 	}
 	case 1:
 		cout << "Implicit solver!\n";
-		//m_pGrid = new Grid(16, 16, 0);
 
 		break;
 	default:
@@ -191,8 +189,10 @@ void DiffusionSimulator::diffuseTemperatureExplicit(const float& a_fTimeStep)
 	float l_fDeltaSqZ = (float)m_fCubeDimension / (float)m_iGridZ;
 	l_fDeltaSqZ *= l_fDeltaSqZ;
 
+	// to avoid changing the border values from 0
 	int l_iXLimiter = m_iGridX - 1;
 	int l_iYLimiter = m_iGridY - 1;
+	int l_iZLimiter = m_iGridZ - 1;
 
 	for (int l_iIndexZ = 0; l_iIndexZ < m_iGridZ; l_iIndexZ++)
 	{
@@ -206,7 +206,7 @@ void DiffusionSimulator::diffuseTemperatureExplicit(const float& a_fTimeStep)
 				float l_fValY = m_pOldGrid->getVal(l_iIndexX, l_iIndexY + 1, l_iIndexZ) - 2 * l_fCurrentIndexTemperature + m_pOldGrid->getVal(l_iIndexX, l_iIndexY - 1, l_iIndexZ) * l_fDeltaSqY;
 				float l_fValZ = 0;
 
-				if (m_iGridZ > 1)
+				if (l_iZLimiter > l_iIndexZ && l_iIndexZ > 0)
 				{
 					l_fValZ = m_pOldGrid->getVal(l_iIndexX, l_iIndexY, l_iIndexZ + 1) - 2 * l_fCurrentIndexTemperature + m_pOldGrid->getVal(l_iIndexX, l_iIndexY, l_iIndexZ - 1);
 				}
@@ -296,15 +296,18 @@ void DiffusionSimulator::setupA(SparseMatrix<Real>& A, const float& a_fTimeStep)
 		{
 			for (int l_iIndexX = 0; l_iIndexX < m_iGridX; l_iIndexX++)
 			{
+				//Check if border index
 				if ((l_iIndexX == 0 ||
 					l_iIndexX == l_iGridXLimiter||
 					l_iIndexY == 0 ||
 					l_iIndexY == l_iGridYLimiter))
 				{
+					// If border and diagonal
 					if (l_iIndexY == l_iIndexX)
 					{
 						A.set_element(l_iIndexX, l_iIndexY, 1); // set diagonal of boundary values to 1.0
 					}
+					// If border and not diagonal
 					else
 					{
 						A.set_element(l_iIndexX, l_iIndexY, 0);
