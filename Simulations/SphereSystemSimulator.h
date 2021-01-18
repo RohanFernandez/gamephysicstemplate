@@ -43,7 +43,6 @@ protected:
 	// you will need multiple SphereSystem objects to do comparisons in Demo 3
 	// m_iAccelerator should be ignored.
 	// SphereSystem * m_pSphereSystemGrid; 
-
 };
 
 #endif
